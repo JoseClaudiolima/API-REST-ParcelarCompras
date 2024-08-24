@@ -3,18 +3,18 @@
 require_once("config.php");
 require_once("Compra.php");
 
+//define o tipo de conteúdo que o servidor está enviando de volta para o cliente no formato JSON
 header('Content-Type: application/json');
 
 $metodo = $_SERVER['REQUEST_METHOD'];
 
 if($metodo === 'POST'){
-
     // Recebe os dados de entrada
     $entrada = json_decode(file_get_contents('php://input'), true);
 
     $compra = new Compra($conn, $entrada);
 
-    //Verifica se entrada é condizente a criar parcelamento
+    //Verifica se entrada é condizente a criar novo parcelamento
     if ($compra->checar_parcelamento()){
 
         $compra->criar_parcelamento();
@@ -42,7 +42,7 @@ if($metodo === 'POST'){
         ]);
     }
 
-//Aviso de que metodo não possui suporte no sistema
+//Aviso de que o metodo não possui suporte no sistema
 } else{
     http_response_code(405);
     echo json_encode(['Aviso' => 'Método não permitido!']);

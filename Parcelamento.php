@@ -20,17 +20,18 @@ class ParcelamentoDAO{
         return $this->conn->lastInsertId();
     }
 
-    //Abaixo será buscado sobre o BD o id colocado como parametro, e retornado falso caso não ache
+    //Abaixo será buscado no BD o parcelamento, colocado como parametro 'id', e retornado falso caso não ache
     public function buscar($id){
         $stmt = $this->conn->prepare('SELECT * FROM parcelamentos WHERE id = :id');
         $stmt->bindParam(':id', $id, PDO::PARAM_INT);
         $stmt->execute();
-        
         $id_buscado = $stmt->fetch();
+        
         if (!$id_buscado){
             return false;
+        } else{
+            return $id_buscado;
         }
-        return $id_buscado;
     }
 }
 

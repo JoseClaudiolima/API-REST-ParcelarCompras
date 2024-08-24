@@ -1,5 +1,5 @@
 <?php
-//Insira as informações compatíveis conforme o mysql de sua máquina
+//Insira as informações compatíveis conforme o sistema de gerenciamento de banco de dados de sua máquina
 $host = 'localhost';
 $dbname = 'compras';
 $user = 'root';

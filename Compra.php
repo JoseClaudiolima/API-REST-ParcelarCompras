@@ -108,7 +108,7 @@ class Compra{
             return false;
 
         }
-         else{
+         else{ //Retornará true, pois passou corretamente por toda a filtragem de checagem
             return true;
         }
     }
