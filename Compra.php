@@ -12,14 +12,16 @@ class Compra{
 
     private $entrada_dados_inteira;
     private $lista_entrada;
-    private $tipo_erro;
-    private $mensagem_erro;
+    private $tipo_erro_criacao_parcelamento;
+    private $mensagem_erro_criacao_parcelamento;
     private $mensagem_sucesso;
     private $padrao_data;
     private $data_termino;
     private $id_parcelamento_criado;
 
     private $mensagem_consulta;
+    private $tipo_erro_realizar_busca;
+    private $mensagem_erro_realizar_busca;
 
     public function __construct($conn, $entrada_dados){
         $this->conn = $conn;
@@ -36,8 +38,12 @@ class Compra{
         return $this->mensagem_consulta;
     }
 
-    public function get_mensagem_erro(){
-        return $this->mensagem_erro;
+    public function get_mensagem_erro_criacao_parcelamento(){
+        return $this->mensagem_erro_criacao_parcelamento;
+    }
+
+    public function get_tipo_erro_criacao_parcelamento(){
+        return $this->tipo_erro_criacao_parcelamento;
     }
 
     public function get_mensagem_sucesso(){
@@ -64,39 +70,41 @@ class Compra{
             'periodicidade' => $this->periodicidade
         ];
 
+        //Abaixo, será checado se os valores de entrada estão condizentes para criação de um novo parcelamento
+        //Com tipo de erro personalizado
         if (in_array(null, $this->lista_entrada)){
             $entradaAusente = array_filter($this->lista_entrada, function ($valor){
                 return is_null($valor);
             });
 
-            $this->tipo_erro = 'Valores Ausentes';
-            $this->mensagem_erro = $entradaAusente;
+            $this->tipo_erro_criacao_parcelamento = 'Valores Ausentes para criar parcelamento';
+            $this->mensagem_erro_criacao_parcelamento = $entradaAusente;
             return false;
             
         } else if(!is_numeric($this->valor_total) or $this->valor_total < 0){
-            $this->tipo_erro = 'Valores não compatíveis';
-            $this->mensagem_erro = 'valor_total';
+            $this->tipo_erro_criacao_parcelamento = 'Valores não compatíveis para criar novo parcelamento';
+            $this->mensagem_erro_criacao_parcelamento = 'valor_total';
             return false;
 
         } else if(!is_numeric($this->qtd_parcelas) or $this->qtd_parcelas < 0){
-            $this->tipo_erro = 'Valores não compatíveis';
-            $this->mensagem_erro = 'qtd_parcelas';
+            $this->tipo_erro_criacao_parcelamento = 'Valores não compatíveis para criar novo parcelamento';
+            $this->mensagem_erro_criacao_parcelamento = 'qtd_parcelas';
             return false;
 
         } else if($this->periodicidade !== 'semanal' and $this->periodicidade !== 'mensal' and $this->periodicidade !== 'anual'){
-            $this->tipo_erro = 'Valores não compatíveis';
-            $this->mensagem_erro = 'periodicidade';
+            $this->tipo_erro_criacao_parcelamento = 'Valores não compatíveis para criar novo parcelamento';
+            $this->mensagem_erro_criacao_parcelamento = 'periodicidade';
             return false;
 
         } else if(!$this->validar_data($this->data_primeiro_vencimento)){
-            $this->tipo_erro = 'Valores não compatíveis';
-            $this->mensagem_erro = 'data_primeiro_vencimento';
+            $this->tipo_erro_criacao_parcelamento = 'Valores não compatíveis para criar novo parcelamento';
+            $this->mensagem_erro_criacao_parcelamento = 'data_primeiro_vencimento';
             return false;
 
         } else if(isset($this->valor_entrada) and (!is_numeric($this->valor_entrada) or $this->valor_entrada < 0)
             ){
-            $this->tipo_erro = 'Valores não compatíveis';
-            $this->mensagem_erro = 'valor_entrada';
+            $this->tipo_erro_criacao_parcelamento = 'Valores não compatíveis para criar novo parcelamento';
+            $this->mensagem_erro_criacao_parcelamento = 'valor_entrada';
             return false;
 
         }
@@ -104,12 +112,8 @@ class Compra{
             return true;
         }
     }
-    
-    public function get_tipo_erro(){
-        return $this->tipo_erro;
-    }
 
-    public function validar_data($data) {
+    public function validar_data($data) { //Nesta função, será validado se o parâmetro está na regra de data estabelecida
         $this->padrao_data = DateTime::createFromFormat('Y-m-d', $data);
         if ($this->padrao_data && $this->padrao_data->format('Y-m-d') === $data) {
             return true;
@@ -118,7 +122,7 @@ class Compra{
         }
     }
 
-    public function adicionar_tempo($data, $intervalo) {
+    public function adicionar_tempo($data, $intervalo) { //Será adicionado (meses, semanas ou anos) sobre a data inserida
         $d = DateTime::createFromFormat('Y-m-d', $data);
         if ($d && $d->format('Y-m-d') === $data) {
             $d->modify($intervalo);
@@ -141,6 +145,7 @@ class Compra{
 
         $this->data_termino = $this->adicionar_tempo($this->data_primeiro_vencimento, "+ $this->qtd_parcelas $this->periodicidade_soma");
 
+        //Abaixo será chamado a função criar da classe Parcelamento (em outro arquivo separado somente para manipulação do BD), e com retorno de id
         $parcelamento = new ParcelamentoDAO($this->conn);
         $this->id_parcelamento_criado = $parcelamento->criar($this->valor_total, $this->qtd_parcelas, $this->data_primeiro_vencimento, $this->periodicidade, $this->valor_entrada);
 
@@ -150,15 +155,16 @@ class Compra{
     public function checar_consulta(){
         $this->id_busca = $this->receber_valor($this->entrada_dados_inteira, "id");
         
+        //Abaixo será chamado a função buscar classe Parcelamento (em outro arquivo separado somente para manipulação do BD)
         $parcelamento = new ParcelamentoDAO($this->conn);
         $informacoes_busca = $parcelamento->buscar($this->id_busca);
 
-        if(!$informacoes_busca){
+        if(isset($this->id_busca) && !$informacoes_busca){ //Caso haja entrada de 'id' porém não seja encontrado nenhum parcelamento neste
             $this->mensagem_consulta = "Consulta Realizada com sucesso!";
             $this->mensagem_sucesso = "Não foi encontrado resultado de pesquisa";
             return true;
-            
-        } else {
+
+        } else if (isset($this->id_busca) && $informacoes_busca){ // Casa haja entrada de 'id' e também os dados de parcelamento
             $valor_total = $informacoes_busca['valor_total'];
             $qtd_parcelas = $informacoes_busca['qtd_parcelas'];
             $data_primeiro_vencimento = $informacoes_busca['data_primeiro_vencimento'];
@@ -171,6 +177,9 @@ class Compra{
             $this->mensagem_sucesso = "O parcelamento de $valor_total, foi dividido em $qtd_parcelas parcela(s) de $parcelas real(is) $periodicidade(is), tendo como $data_primeiro_vencimento como primeira data de vencimento.";
     
             return true;
+
+        } else { //Retorna falso, caso não haja sequer entrada de 'id'
+            return false;
         }
     }
 

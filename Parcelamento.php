@@ -7,6 +7,7 @@ class ParcelamentoDAO{
         $this->conn = $conn;
     }
     
+    //Abaixo será executado uma query para inserir dados no BD de um novo parcelamento, e com retorno do id inserido
     public function criar($valor_total, $qtd_parcelas, $data_primeiro_vencimento, $periodicidade, $valor_entrada){
         $stmt = $this->conn->prepare('INSERT parcelamentos (valor_total, qtd_parcelas, data_primeiro_vencimento, periodicidade, valor_entrada) VALUES (:valor_total, :qtd_parcelas, :data_primeiro_vencimento, :periodicidade, :valor_entrada)');
         $stmt->bindParam(':valor_total', $valor_total, PDO::PARAM_STR);
@@ -19,6 +20,7 @@ class ParcelamentoDAO{
         return $this->conn->lastInsertId();
     }
 
+    //Abaixo será buscado sobre o BD o id colocado como parametro, e retornado falso caso não ache
     public function buscar($id){
         $stmt = $this->conn->prepare('SELECT * FROM parcelamentos WHERE id = :id');
         $stmt->bindParam(':id', $id, PDO::PARAM_INT);
