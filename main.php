@@ -13,14 +13,17 @@ if($metodo === 'POST'){
 
     $compra = new Compra($entrada);
 
-    if ($compra->checar_valores()){
+    if ($compra->checar_parcelamento()){
+
+        $compra->criar_parcelamento();
+
         echo json_encode([
             'Aviso' => 'Parcelamento concluido com sucesso!',
-            'Mensagem' => '',
-            'Previsão do último pagamento' => ''
+            'Mensagem' => $compra->get_mensagem_sucesso(),
+            'Previsão do último pagamento' => $compra->get_previsao_termino()
         ]);
 
-    } else{
+    } else{ //checar_consulta()
         echo json_encode([
             'Aviso' => 'Valores obrigatórios de entrada ausentes!',
             $compra->get_tipo_erro() => $compra->get_mensagem_erro()
