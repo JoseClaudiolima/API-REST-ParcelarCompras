@@ -1,6 +1,9 @@
 <?php
 
+require_once("Parcelamento.php");
+
 class Compra{
+    private $conn;
     private $valor_total;
     private $qtd_parcelas;
     private $data_primeiro_vencimento;
@@ -13,8 +16,10 @@ class Compra{
     private $mensagem_sucesso;
     private $padrao_data;
     private $data_termino;
+    private $id_parcelamento_criado;
 
-    public function __construct($entrada_dados){
+    public function __construct($conn, $entrada_dados){
+        $this->conn = $conn;
         $this->valor_total = $this->receber_valor($entrada_dados, "valor_total");
         $this->qtd_parcelas = $this->receber_valor($entrada_dados, "qtd_parcelas");
         $this->data_primeiro_vencimento = $this->receber_valor($entrada_dados, "data_primeiro_vencimento");
@@ -94,6 +99,10 @@ class Compra{
         return $this->data_termino;
     }
 
+    public function get_id_parcelamento_criado(){
+        return $this->id_parcelamento_criado;
+    }
+
     public function validar_data($data) {
         $this->padrao_data = DateTime::createFromFormat('Y-m-d', $data);
         if ($this->padrao_data && $this->padrao_data->format('Y-m-d') === $data) {
@@ -114,9 +123,6 @@ class Compra{
     }
 
     public function criar_parcelamento(){
-
-        // ... pdo
-
         if($this->periodicidade === 'mensal'){
             $this->periodicidade_soma = 'months';
         } else if ($this->periodicidade === 'anual'){
@@ -127,11 +133,14 @@ class Compra{
 
         $parcelas = round(($this->valor_total - $this->valor_entrada) / $this->qtd_parcelas,2);
 
-        $this->mensagem_sucesso = "O parcelamento de $this->valor_total, foi dividido em $this->qtd_parcelas parcela(s) de $parcelas real(is) $this->periodicidade(is), tendo como $this->data_primeiro_vencimento como primeira data de vencimento.";
+        $this->data_termino = $this->adicionar_tempo($this->data_primeiro_vencimento, "+ $this->qtd_parcelas $this->periodicidade_soma");
 
-        $this->data_termino = $this->adicionar_tempo($this->data_primeiro_vencimento,
-         "+ $this->qtd_parcelas $this->periodicidade_soma");
+        $parcelamento = new ParcelamentoDAO($this->conn);
+        $this->id_parcelamento_criado = $parcelamento->criar($this->valor_total, $this->qtd_parcelas, $this->data_primeiro_vencimento, $this->periodicidade, $this->valor_entrada);
+
+        $this->mensagem_sucesso = "O parcelamento de $this->valor_total, foi dividido em $this->qtd_parcelas parcela(s) de $parcelas real(is) $this->periodicidade(is), tendo como $this->data_primeiro_vencimento como primeira data de vencimento.";
     }
+
 
 }
 

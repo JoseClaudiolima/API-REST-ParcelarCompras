@@ -1,5 +1,6 @@
 <?php
 
+require_once("config.php");
 require_once("Compra.php");
 
 header('Content-Type: application/json');
@@ -11,7 +12,7 @@ if($metodo === 'POST'){
 
     $entrada = json_decode(file_get_contents('php://input'), true);
 
-    $compra = new Compra($entrada);
+    $compra = new Compra($conn, $entrada);
 
     if ($compra->checar_parcelamento()){
 
@@ -20,7 +21,8 @@ if($metodo === 'POST'){
         echo json_encode([
             'Aviso' => 'Parcelamento concluido com sucesso!',
             'Mensagem' => $compra->get_mensagem_sucesso(),
-            'Previsão do último pagamento' => $compra->get_previsao_termino()
+            'Previsão do último pagamento' => $compra->get_previsao_termino(),
+            'ID do parcelamento' => $compra->get_id_parcelamento_criado()
         ]);
 
     } else{ //checar_consulta()

@@ -1,0 +1,10 @@
+<?php
+
+$host = 'localhost';
+$dbname = 'compras';
+$user = 'root';
+$pass ='';
+
+$conn = new PDO("mysql:host={$host};dbname={$dbname}", $user, $pass);
+
+?>
