@@ -10,6 +10,7 @@ class Compra{
     private $periodicidade;
     private $valor_entrada;
 
+    private $entrada_dados_inteira;
     private $lista_entrada;
     private $tipo_erro;
     private $mensagem_erro;
@@ -17,6 +18,8 @@ class Compra{
     private $padrao_data;
     private $data_termino;
     private $id_parcelamento_criado;
+
+    private $mensagem_consulta;
 
     public function __construct($conn, $entrada_dados){
         $this->conn = $conn;
@@ -26,10 +29,29 @@ class Compra{
         $this->periodicidade = $this->receber_valor($entrada_dados, "periodicidade");
         $this->valor_entrada = $this->receber_valor($entrada_dados, "valor_entrada");
 
-        
+        $this->entrada_dados_inteira = $entrada_dados;
     }
 
+    public function get_mensagem_consulta(){
+        return $this->mensagem_consulta;
+    }
 
+    public function get_mensagem_erro(){
+        return $this->mensagem_erro;
+    }
+
+    public function get_mensagem_sucesso(){
+        return $this->mensagem_sucesso;
+    }
+
+    public function get_previsao_termino(){
+        return $this->data_termino;
+    }
+
+    public function get_id_parcelamento_criado(){
+        return $this->id_parcelamento_criado;
+    }
+    
     public function receber_valor($entrada, $chave){
         return !isset($entrada[$chave]) ? null : $entrada[$chave];
     }
@@ -86,22 +108,6 @@ class Compra{
     public function get_tipo_erro(){
         return $this->tipo_erro;
     }
-    
-    public function get_mensagem_erro(){
-        return $this->mensagem_erro;
-    }
-
-    public function get_mensagem_sucesso(){
-        return $this->mensagem_sucesso;
-    }
-
-    public function get_previsao_termino(){
-        return $this->data_termino;
-    }
-
-    public function get_id_parcelamento_criado(){
-        return $this->id_parcelamento_criado;
-    }
 
     public function validar_data($data) {
         $this->padrao_data = DateTime::createFromFormat('Y-m-d', $data);
@@ -139,6 +145,33 @@ class Compra{
         $this->id_parcelamento_criado = $parcelamento->criar($this->valor_total, $this->qtd_parcelas, $this->data_primeiro_vencimento, $this->periodicidade, $this->valor_entrada);
 
         $this->mensagem_sucesso = "O parcelamento de $this->valor_total, foi dividido em $this->qtd_parcelas parcela(s) de $parcelas real(is) $this->periodicidade(is), tendo como $this->data_primeiro_vencimento como primeira data de vencimento.";
+    }
+
+    public function checar_consulta(){
+        $this->id_busca = $this->receber_valor($this->entrada_dados_inteira, "id");
+        
+        $parcelamento = new ParcelamentoDAO($this->conn);
+        $informacoes_busca = $parcelamento->buscar($this->id_busca);
+
+        if(!$informacoes_busca){
+            $this->mensagem_consulta = "Consulta Realizada com sucesso!";
+            $this->mensagem_sucesso = "Não foi encontrado resultado de pesquisa";
+            return true;
+            
+        } else {
+            $valor_total = $informacoes_busca['valor_total'];
+            $qtd_parcelas = $informacoes_busca['qtd_parcelas'];
+            $data_primeiro_vencimento = $informacoes_busca['data_primeiro_vencimento'];
+            $periodicidade = $informacoes_busca['periodicidade'];
+            $valor_entrada = is_null($informacoes_busca['valor_entrada']) ? "0.00" : $informacoes_busca['valor_entrada']; 
+            
+            $parcelas = round(($valor_total - $valor_entrada) / $qtd_parcelas,2);
+    
+            $this->mensagem_consulta = "Consulta Realizada com sucesso!";
+            $this->mensagem_sucesso = "O parcelamento de $valor_total, foi dividido em $qtd_parcelas parcela(s) de $parcelas real(is) $periodicidade(is), tendo como $data_primeiro_vencimento como primeira data de vencimento.";
+    
+            return true;
+        }
     }
 
 

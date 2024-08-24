@@ -25,7 +25,13 @@ if($metodo === 'POST'){
             'ID do parcelamento' => $compra->get_id_parcelamento_criado()
         ]);
 
-    } else{ //checar_consulta()
+    } else if ($compra->checar_consulta()){
+        echo json_encode([
+            'Aviso' => $compra->get_mensagem_consulta(),
+            'Mensagem' => $compra->get_mensagem_sucesso()
+        ]);
+
+    } else{ 
         echo json_encode([
             'Aviso' => 'Valores obrigatórios de entrada ausentes!',
             $compra->get_tipo_erro() => $compra->get_mensagem_erro()

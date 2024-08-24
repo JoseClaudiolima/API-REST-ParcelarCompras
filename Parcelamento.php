@@ -20,7 +20,15 @@ class ParcelamentoDAO{
     }
 
     public function buscar($id){
+        $stmt = $this->conn->prepare('SELECT * FROM parcelamentos WHERE id = :id');
+        $stmt->bindParam(':id', $id, PDO::PARAM_INT);
+        $stmt->execute();
         
+        $id_buscado = $stmt->fetch();
+        if (!$id_buscado){
+            return false;
+        }
+        return $id_buscado;
     }
 }
 
